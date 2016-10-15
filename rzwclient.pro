@@ -82,6 +82,13 @@ linux-g++ {
     SOURCES += emaeventthread.cpp
     HEADERS += emaeventthread.h
 
+    #Demo support
+    #DEFINES += DEMOTOOLBOX
+    #socket support by lhj
+    DEFINES += _SENDTOSERVER
+    #ABDoor support
+    DEFINES += _ABDOOR
+
     exists(/usr/lib/arm-linux-gnueabihf) {
         DEFINES += _EXYNOS_ARM
         CPU = arm
