@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'mainwindow.h'
 **
-** Created: Sat Oct 15 14:55:51 2016
+** Created: Sat Oct 15 20:16:17 2016
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,7 +23,7 @@ static const uint qt_meta_data_MainWindow[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-      27,   14, // methods
+      40,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -58,6 +58,19 @@ static const uint qt_meta_data_MainWindow[] = {
      595,  551,   18,   18, 0x08,
      633,   77,   18,   18, 0x08,
      668,  742,   18,   18, 0x08,
+     789,  810,  823,   18, 0x08,
+     827,  845,   18,   18, 0x08,
+     854,  879,   18,   18, 0x08,
+     886,  918,   18,   18, 0x08,
+     927,  845,   18,   18, 0x08,
+     947,  967,   18,   18, 0x08,
+     972,   18,   18,   18, 0x08,
+     988, 1022,   18,   18, 0x08,
+    1031, 1051,   18,   18, 0x08,
+    1061, 1079,   18,   18, 0x08,
+    1082, 1106, 1119,   18, 0x08,
+    1130, 1158,   18,   18, 0x08,
+    1169,  495,   18,   18, 0x08,
 
        0        // eod
 };
@@ -84,6 +97,18 @@ static const char qt_meta_stringdata_MainWindow[] = {
     "displaySelectedImages(CMI_IMAGE_INFO*,unsigned char*,unsigned char*,bo"
     "ol)\0"
     "imageInfo,lfinalImage,rfinalImage,showBoundary\0"
+    "saveToLocal(int,int)\0personId,num\0int\0"
+    "sendToServer(int)\0personId\0"
+    "sendToServer2(DBRecord*)\0record\0"
+    "doReadingDatagrams(AzIrisInfo&)\0"
+    "irisInfo\0doDeletePerson(int)\0"
+    "doDeleteRecord(int)\0nums\0sendHeartbeat()\0"
+    "doUpdateSettings(ConfigSettings*)\0"
+    "settings\0settingWeigand(int)\0numofbits\0"
+    "writeWeigand(int)\0id\0bindingWeigand(int,int)\0"
+    "id,numOfBits\0QByteArray\0"
+    "doEnrollPerson(AzIrisInfo&)\0personInfo\0"
+    "gpiReading(EMA_EVENT*)\0"
 };
 
 void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -121,6 +146,21 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 24: _t->setDistanceUnselectedRect((*reinterpret_cast< bool(*)>(_a[1])),(*reinterpret_cast< float(*)>(_a[2]))); break;
         case 25: _t->displayLiveImages((*reinterpret_cast< CMI_IMAGE_INFO*(*)>(_a[1]))); break;
         case 26: _t->displaySelectedImages((*reinterpret_cast< CMI_IMAGE_INFO*(*)>(_a[1])),(*reinterpret_cast< unsigned char*(*)>(_a[2])),(*reinterpret_cast< unsigned char*(*)>(_a[3])),(*reinterpret_cast< bool(*)>(_a[4]))); break;
+        case 27: { int _r = _t->saveToLocal((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2])));
+            if (_a[0]) *reinterpret_cast< int*>(_a[0]) = _r; }  break;
+        case 28: _t->sendToServer((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 29: _t->sendToServer2((*reinterpret_cast< DBRecord*(*)>(_a[1]))); break;
+        case 30: _t->doReadingDatagrams((*reinterpret_cast< AzIrisInfo(*)>(_a[1]))); break;
+        case 31: _t->doDeletePerson((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 32: _t->doDeleteRecord((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 33: _t->sendHeartbeat(); break;
+        case 34: _t->doUpdateSettings((*reinterpret_cast< ConfigSettings*(*)>(_a[1]))); break;
+        case 35: _t->settingWeigand((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 36: _t->writeWeigand((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 37: { QByteArray _r = _t->bindingWeigand((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< int(*)>(_a[2])));
+            if (_a[0]) *reinterpret_cast< QByteArray*>(_a[0]) = _r; }  break;
+        case 38: _t->doEnrollPerson((*reinterpret_cast< AzIrisInfo(*)>(_a[1]))); break;
+        case 39: _t->gpiReading((*reinterpret_cast< EMA_EVENT*(*)>(_a[1]))); break;
         default: ;
         }
     }
@@ -158,9 +198,9 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 27)
+        if (_id < 40)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 27;
+        _id -= 40;
     }
     return _id;
 }

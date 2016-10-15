@@ -4,7 +4,11 @@
 #include "dbrecord.h"
 #include <QtSql/QSqlDatabase>
 #include <QList>
-
+#if defined(_SENDTOSERVER)
+#include "inoutinfo.h"
+#include "azirisinfo.h"
+#include "configsettings.h"
+#endif
 class QSqlTableModel;
 
 class CDataBase
@@ -20,7 +24,14 @@ public:
 	int recordListSize() {return m_recordList.size();}
 
 	QList<DBRecord *> m_recordList;
-
+#if defined(_SENDTOSERVER)
+    //for inoutcontroll
+    QSqlDatabase db() {return m_db;}
+    bool downloadIrisTemplate(AzIrisInfo &irisInfo);
+    bool deletePerson(int personId);
+    bool deleteRecord(int nums);
+    bool updateSettings(ConfigSettings *settings);
+#endif
 private:
 	QSqlDatabase m_db;
 	QSqlTableModel *m_sqlModel;

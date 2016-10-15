@@ -33,6 +33,29 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    //lhj add
+#if defined(_SENDTOSERVER)
+
+    m_timer = new QTimer(this);
+    connect(m_timer,SIGNAL(timeout()),this,SLOT(sendHeartbeat()));
+    m_timer->start(1000*30);
+    udpClient= new QUdpSocket(this);
+    udpClient->bind(1234,QUdpSocket::ShareAddress);
+    m_udpServerThread = new UdpServerThread();
+    if(m_udpServerThread){
+        connect(m_udpServerThread,SIGNAL(readingDatagrams(AzIrisInfo&)),this,SLOT(doReadingDatagrams(AzIrisInfo&)));
+        connect(m_udpServerThread,SIGNAL(deletePerson(int)),this,SLOT(doDeletePerson(int)));
+        connect(m_udpServerThread,SIGNAL(deleteRecord(int)),this,SLOT(doDeleteRecord(int)));
+        connect(m_udpServerThread,SIGNAL(updateSettings(ConfigSettings*)),this,SLOT(doUpdateSettings(ConfigSettings*)));
+        connect(m_udpServerThread,SIGNAL(enrollPerson(AzIrisInfo&)),this,SLOT(doEnrollPerson(AzIrisInfo&)));
+        m_udpServerThread->start();
+    }
+#endif
+#if defined(_ABDOOR)
+    m_gpi1value=EMA_EVENT_VALUE_GPIO_HIGH;
+   ui->label_EMAEvent->setText(QString("mEMA_EVENT_TYPE_GPI1_READ=%1").arg(m_gpi1value));
+#endif
+    this->setWindowTitle("Acezne Iris Client");
 
 	// Initialize max Movement values
 	m_maxXYMovementEnrollment = 0.4;
@@ -280,7 +303,18 @@ MainWindow::~MainWindow()
 		delete m_deviceInfoList.at(i);
 	}
 	m_deviceInfoList.clear();
+    //lhj add
+#if defined(_SENDTOSERVER)
+    if(m_udpServerThread && m_udpServerThread->isRunning()){
+        m_udpServerThread->abort();
+        m_udpServerThread->wait();
+    }
+    if(m_udpServerThread) delete m_udpServerThread;
 
+    udpClient->close();
+    delete udpClient;
+
+#endif
     delete ui;
 }
 
@@ -480,8 +514,10 @@ void MainWindow::open() {
 			dvInfo = m_deviceInfoList.at(i);
 		}
 	}
-    //cmi_setMotionDetectionThreshold(m_cmiHandle,0);
-    //cmi_setPSDEnabled(m_cmiHandle,CMI_TRUE);
+
+    //lhj add
+    dzrun.configSettings.readConfig();
+
     //EMA
     if (ui->checkBox_UsePSD->isChecked()) {
         cmi_setMotionDetectionThreshold(m_cmiHandle,0);
@@ -506,9 +542,6 @@ void MainWindow::open() {
         return;
     }
 #endif
-
-    //cmi_setPSDEnabled(m_cmiHandle,CMI_TRUE);
-    //cmi_setMotionDetectionThreshold(m_cmiHandle,0);
 
     int ret = cmi_openDevice(m_cmiHandle, dvInfo);
 
@@ -1266,8 +1299,9 @@ bool MainWindow::canEnroll(CMI_IMAGE_INFO *imageInfo) {
 
         DialogOverwrite dialogoverwrite;
         bool ok;
-
-        if (ok = dialogoverwrite.exec()) {  //Overwrite DB
+        //lhj add overwrite
+        if(true){
+        //if (ok = dialogoverwrite.exec()) {  //Overwrite DB
             CMI_MIR_DUAL_EYE_TEMPLATE enrolTemplate;
             enrolTemplate.left.templateData = new unsigned char [CMI_MIR_ENROL_TEMPLATE_SIZE];
             enrolTemplate.left.templateSize = CMI_MIR_ENROL_TEMPLATE_SIZE;
@@ -1384,6 +1418,7 @@ bool MainWindow::canEnroll(CMI_IMAGE_INFO *imageInfo) {
                 ui->statusBar->showMessage("Error! fail to enroll templates!");
             }
             else { // success
+
     #if defined(__linux__)
                 system(QString("aplay %1/enrollCompleted.wav").arg(m_curPath).toStdString().c_str());
     #else
@@ -1444,10 +1479,20 @@ void MainWindow::doEnroll(CMI_IMAGE_INFO *imageInfo) {
     DialogName dialogname;
     QString name;
     bool ok;
+    //lhj add
+    #if defined(DEMOTOOLBOX)
+        ok = true;
+        name = "u" + QString::number( m_database.recordListSize());
+    #else
+        if(dzrun.enrollMode){
+            ok=true;
+            name="u"+QString::number(dzrun.enrollPerson->personId);
+        }else
+        if (ok = dialogname.exec()) {
+            name = dialogname.name();
+        }
+    #endif
 
-    if (ok = dialogname.exec()) {
-        name = dialogname.name();
-    }
 
     if (ok && !name.isEmpty()) {
         DBRecord record;
@@ -1482,11 +1527,31 @@ void MainWindow::doEnroll(CMI_IMAGE_INFO *imageInfo) {
         enrollFaceImagePath(imageInfo, &record, baseFilename);
         ////////////////////////////////////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////////////////////
+        //lhj add
+                if(dzrun.enrollMode){
+                    record.setId(dzrun.enrollPerson->personId);
+                    record.setIf_UserNo(dzrun.enrollPerson->if_UserNo);
+                }
+
+        //-----
 
         if (!m_database.insert(record)) {
             ui->statusBar->showMessage("Error! fail to enroll templates!");
         }
         else { // success
+            //lhj
+            //sendback to server
+            if(dzrun.enrollMode){
+                dzrun.enrollPerson->leftIrisTemplate = record.leftIrisTemplate();
+                dzrun.enrollPerson->rightIrisTemplate= record.rightIrisTemplate();
+                utils->sendEnrollPerson(dzrun.enrollPerson);
+                dzrun.enrollMode = false;
+                dzrun.enrollPerson = new AzIrisInfo();
+
+                recog();
+            }
+            //--
+
 			#if defined(__linux__)
 				system(QString("aplay %1/enrollCompleted.wav").arg(m_curPath).toStdString().c_str());
 			#else
@@ -1783,7 +1848,20 @@ void MainWindow::doRecog(CMI_IMAGE_INFO *imageInfo) {
 
         emaEvent.relayValue = EMA_EVENT_VALUE_RELAY_ABNORMAL;
 
+//lhj add
+#if defined(_ABDOOR)
+        if(m_gpi1value==EMA_EVENT_VALUE_GPIO_LOW){
+            qDebug()<<"please close A door ,first.";
+            //system(QString("aplay %1/closedoor.wav").arg(m_curPath).toStdString().c_str());
+        }else{
+            int ret = ema_writeEvent(m_emaHandle, &emaEvent);
+            writeWeigand(record->if_UserNo());
+        }
+#else
         int ret = ema_writeEvent(m_emaHandle, &emaEvent);
+        writeWeigand(record->if_UserNo());
+#endif
+//
 #endif
 
         if(!record->faceImagePath().isNull())
@@ -1833,8 +1911,24 @@ void MainWindow::doRecog(CMI_IMAGE_INFO *imageInfo) {
             msgBox.exec();
         }
 
+
+        //<lhj add comment=send to server>
+#if defined(_SENDTOSERVER)
+        int userNo=record->id(); //personid
+        //saveToLocal(userNo); call by sendToServer
+        sendToServer(userNo);
+#endif
+        //</lhj>
 #if defined(__linux__)
-        system("aplay /usr/local/share/aizhetech/recognized.wav");
+        //system("aplay /usr/local/share/aizhetech/recognized.wav");
+#if defined(_ABDOOR)
+        if(m_gpi1value==EMA_EVENT_VALUE_GPIO_LOW){
+            qDebug()<<"please close A door ,first.";
+            system(QString("aplay %1/closedoor.wav").arg(m_curPath).toStdString().c_str());
+        }
+#else
+           system(QString("aplay %1/recognized.wav").arg(m_curPath).toStdString().c_str());
+#endif
 #else
         QSound::play("./recognized.wav");
 #endif
@@ -2217,6 +2311,8 @@ void MainWindow::doDeviceArrived(CMI_DEVICE_INFO *deviceInfo) {
     QMutexLocker locker(&m_dmMutex);
 
 	QString arrivedSN(deviceInfo->serialNumber);
+    //lhj
+    m_deviceSN=arrivedSN;
 	int i;
 
 	int curIndex = ui->comboBox_SerialNumbers->currentIndex();
@@ -2307,12 +2403,21 @@ void MainWindow::doSwitchChanged(int eventID) {
     }
     else if (eventID == CMI_EVENT_FUNC_KEY_1_RELEASED) {
         ui->label_ActionEvent->setText("Key 1 Released");
+
+        //<lhj add>
+    #if defined(DEMOTOOLBOX)
+        enroll();
+    #endif
     }
     else if (eventID == CMI_EVENT_FUNC_KEY_2_PRESSED) {
         ui->label_ActionEvent->setText("Key 2 Pressed");
     }
     else if (eventID == CMI_EVENT_FUNC_KEY_2_RELEASED) {
         ui->label_ActionEvent->setText("Key 2 Released");
+        //<lhj add>
+    #if defined(DEMOTOOLBOX)
+        recog();
+    #endif
     }
     else if (eventID == CMI_EVENT_FUNC_KEY_3_PRESSED) {
         ui->label_ActionEvent->setText("Key 3 Pressed");
@@ -2339,7 +2444,6 @@ void MainWindow::doSwitchChanged(int eventID) {
     else if (eventID == CMI_EVENT_MOVE_DOWN_RELEASED) {
         ui->label_ActionEvent->setText("Move down Released");
     }
-
 }
 
 #if defined(_EMALIB)
@@ -2928,3 +3032,191 @@ void MainWindow::displaySelectedImages(CMI_IMAGE_INFO *imageInfo, unsigned char 
 
 }
 
+#if defined(_SENDTOSERVER)
+int MainWindow::saveToLocal(int personId,int num)
+{
+    InoutInfo ioInfo;
+    QSqlDatabase db=m_database.db();
+    m_inout.setDatabase(db);
+    ioInfo.setDeviceNo(m_deviceSN);
+    ioInfo.setNums(num);
+    ioInfo.setPersonId(personId);
+    ioInfo.setCardTime(QDateTime::currentDateTime());
+    ioInfo.setSeriesId(dzrun.configSettings.seriesId);
+    ioInfo.setFlag(dzrun.configSettings.flag);
+    m_inout.addInout(ioInfo);
+}
+void MainWindow::sendToServer(int personId){
+    qDebug("send to server");
+    QByteArray block;
+    QDataStream out(&block,QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_8);
+    m_hostAddress=QHostAddress(dzrun.configSettings.hostAddress);
+    m_port=dzrun.configSettings.port;
+    quint64 dt=QDateTime::currentDateTime().toString("yyyyMMddhhmm").toLongLong();
+    quint32 num = QDateTime::currentDateTime().toString("ddhhmmss").toInt();
+    saveToLocal(personId,num);
+    out<<quint16(0xAAFF)<<quint8(0x01)<<quint8(0)<<quint32(num)<<m_deviceSN.toAscii()
+      <<quint32(personId)<<quint64(dt)<<dzrun.configSettings.flag;
+    out.device()->seek(3);
+    out<<quint8(block.size()-sizeof(quint16)-sizeof(quint8)*2);
+
+    udpClient->writeDatagram(block,m_hostAddress,m_port);
+    udpClient->writeDatagram(block,QHostAddress("192.168.0.3"),1234);
+    out.device()->close();
+
+}
+
+void MainWindow::sendToServer2(DBRecord *record)
+{
+    QByteArray block;
+    QDataStream out(&block,QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_8);
+    m_hostAddress=QHostAddress("192.168.0.83");
+    m_port=1234;
+    unsigned char *l = new unsigned char [CMI_MIR_ENROL_TEMPLATE_SIZE];
+    l=(unsigned char *)record->leftIrisTemplate().data();
+    QByteArray left=record->leftIrisTemplate();
+    QByteArray right = record->rightIrisTemplate();
+    out<<quint16(0xCCFF)<<quint8(0x02)<<quint16(0)<<quint32(1216)<<quint32(1216)<<left<<right;
+    out.device()->seek(3);
+    out<<quint16(block.size()-sizeof(quint16)*2-sizeof(quint8));
+    udpClient->writeDatagram(block,m_hostAddress,m_port);
+    out.device()->close();
+}
+
+void MainWindow::doReadingDatagrams(AzIrisInfo &irisInfo)
+{
+    if(m_database.downloadIrisTemplate(irisInfo))
+    {
+
+    }
+}
+
+void MainWindow::doDeletePerson(int personId)
+{
+    m_database.deletePerson(personId);
+}
+
+void MainWindow::doDeleteRecord(int nums)
+{
+    m_database.deleteRecord(nums);
+}
+
+void MainWindow::sendHeartbeat()
+{
+    qDebug("send  heartbeat");
+    QByteArray block;
+    QDataStream out(&block,QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_4_8);
+    m_hostAddress=QHostAddress(dzrun.configSettings.hostAddress);
+    m_port=dzrun.configSettings.port;
+
+    out<<quint16(0xAAFF)<<quint8(0x03)<<quint8(0)<<m_deviceSN.toAscii();
+    out.device()->seek(3);
+    out<<quint8(block.size()-sizeof(quint16)-sizeof(quint8)*2);
+
+    udpClient->writeDatagram(block,m_hostAddress,m_port);
+    udpClient->writeDatagram(block,QHostAddress("192.168.0.200"),1234);
+    out.device()->close();
+}
+
+void MainWindow::doUpdateSettings(ConfigSettings *settings)
+{
+    if(settings->deviceSN==m_deviceSN){
+        m_database.updateSettings(settings);
+        dzrun.configSettings.readConfig();
+    }else
+        qDebug()<<"CC-FF-03 "<< settings->deviceSN<<" != "<<"localhost:"<<m_deviceSN;
+}
+
+void MainWindow::settingWeigand(int numofbits)
+{
+
+        EMA_EVENT Event;
+        Event.cbSize = sizeof(EMA_EVENT);
+
+        Event.wiegandOutChannel = 1;
+        Event.numOfBits = numofbits;
+        Event.pulseWidth = 100;
+        Event.pulseInterval = 1100;
+        Event.eventType = EMA_EVENT_TYPE_WIEGAND_SET_CONFIG;
+
+        int ret = ema_writeEvent(m_emaHandle, &Event);
+        m_curEmaConfig = Event;
+        if (ret == 0) {
+            qDebug()<<"Weigand set numofbits="<<numofbits<<" success!\r";
+        }
+        else {
+            qDebug()<<"Weigand set numofbits="<<numofbits<<" fail!\r";
+        }
+}
+
+void MainWindow::writeWeigand(int id)
+{
+    EMA_EVENT emaEvent;
+    emaEvent.cbSize = sizeof(EMA_EVENT);
+
+    emaEvent.eventType = EMA_EVENT_TYPE_WIEGAND_WRITE_DATA;
+
+    emaEvent.wiegandOutChannel = m_curEmaConfig.wiegandOutChannel;
+    qDebug() << "Channel" << emaEvent.wiegandOutChannel;
+    emaEvent.numOfBits = m_curEmaConfig.numOfBits;
+    emaEvent.pulseWidth = m_curEmaConfig.pulseWidth;
+    emaEvent.pulseInterval = m_curEmaConfig.pulseInterval;
+
+
+    emaEvent.eventType = EMA_EVENT_TYPE_WIEGAND_WRITE_DATA;
+    //QByteArray ba = QByteArray::fromHex(str.toAscii());
+    QByteArray ba=bindingWeigand(id,m_curEmaConfig.numOfBits);
+
+    int i;
+    for (i = 0; i < ba.size(); i++) {
+        emaEvent.wiegandData[i] = ba[i];
+    }
+    int ret = ema_writeEvent(m_emaHandle, &emaEvent);
+
+    if (ret == 0) {
+        qDebug()<<"Weigand Write success";
+    }
+    else {
+        qDebug()<<QString("Weigand Write error return= %1").arg(ret);
+    }
+    return;
+}
+
+QByteArray MainWindow::bindingWeigand(int id, int numOfBits)
+{
+    QString hv=QString::number(id/2,16);
+
+    QByteArray ba =QByteArray::fromHex(hv.toAscii());
+    int n ;
+    if(numOfBits==26)
+        n=3-ba.size();
+    if(numOfBits==34)
+        n=4-ba.size();
+    for(int i=0;i<n;i++){
+        ba.insert(0,'\0');
+    }
+    if(id%2==1)
+        ba.append(255);
+    return ba;
+}
+
+void MainWindow::doEnrollPerson(AzIrisInfo &personInfo)
+{
+    enroll();
+}
+
+
+
+
+void MainWindow::gpiReading(EMA_EVENT *event)
+{
+    //if (event->gpi1Value==EMA_EVENT_VALUE_GPIO_LOW)
+    m_gpi1value= event->gpi1Value;
+    //if(m_gpi1value==0)
+    ui->label_EMAEvent->setText(QString("EMA_EVENT_TYPE_GPI1_READ=%1").arg(m_gpi1value));
+}
+
+#endif

@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'mainwindow.ui'
 **
-** Created: Sat Oct 15 14:54:57 2016
+** Created: Sat Oct 15 20:14:59 2016
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
@@ -726,7 +726,7 @@ public:
         palette43.setBrush(QPalette::Disabled, QPalette::WindowText, brush3);
         checkBox_Display->setPalette(palette43);
         checkBox_Display->setFont(font7);
-        checkBox_Display->setChecked(true);
+        checkBox_Display->setChecked(false);
         label_12 = new QLabel(groupBox_2);
         label_12->setObjectName(QString::fromUtf8("label_12"));
         label_12->setGeometry(QRect(150, 30, 61, 51));
@@ -1163,7 +1163,7 @@ public:
         palette81.setBrush(QPalette::Disabled, QPalette::WindowText, brush3);
         checkBox_UsePSD->setPalette(palette81);
         checkBox_UsePSD->setFont(font7);
-        checkBox_UsePSD->setChecked(false);
+        checkBox_UsePSD->setChecked(true);
         groupBox_6 = new QGroupBox(tab_2);
         groupBox_6->setObjectName(QString::fromUtf8("groupBox_6"));
         groupBox_6->setGeometry(QRect(30, 180, 381, 181));
@@ -1407,7 +1407,7 @@ public:
 
     void retranslateUi(QMainWindow *MainWindow)
     {
-        MainWindow->setWindowTitle(QApplication::translate("MainWindow", "rzw-100 client", 0, QApplication::UnicodeUTF8));
+        MainWindow->setWindowTitle(QApplication::translate("MainWindow", "CMIMIRDemo", 0, QApplication::UnicodeUTF8));
         checkBox_ContinuousRecog->setText(QApplication::translate("MainWindow", "Continuous Recog", 0, QApplication::UnicodeUTF8));
         pushButton_Save->setText(QApplication::translate("MainWindow", "Save", 0, QApplication::UnicodeUTF8));
         pushButton_Open->setText(QApplication::translate("MainWindow", "Open", 0, QApplication::UnicodeUTF8));

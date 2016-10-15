@@ -11,6 +11,18 @@
 #include <QGraphicsEllipseItem>
 #include <QGraphicsRectItem>
 #include <QMutex>
+//lhj add
+#if defined(_SENDTOSERVER)
+#include <QUdpSocket>
+#include "udpserverthread.h"
+#include "inoutinfo.h"
+#include "inoutcontroller.h"
+#include "azirisinfo.h"
+#include "configsettings.h"
+#include <QTimer>
+#include "runtime.h"
+#include "utilshelper.h"
+#endif
 //#include <QAudioOutput>
 
 #include "cmirislib2.h"
@@ -119,6 +131,25 @@ private slots:
     void displaySelectedImages(CMI_IMAGE_INFO *imageInfo, unsigned char *lfinalImage,
                                unsigned char *rfinalImage, bool showBoundary);
 
+
+#if defined(_SENDTOSERVER)
+    int saveToLocal(int personId,int num);
+    void sendToServer(int personId);
+    void sendToServer2(DBRecord *record);
+    void doReadingDatagrams(AzIrisInfo &irisInfo);
+    void doDeletePerson(int personId);
+    void doDeleteRecord(int nums);
+    void sendHeartbeat();
+    void doUpdateSettings(ConfigSettings *settings);
+    void settingWeigand(int numofbits);
+    void writeWeigand(int id);
+    QByteArray bindingWeigand(int id,int numOfBits);
+    void doEnrollPerson(AzIrisInfo &personInfo);
+#endif
+#if defined(_ABDOOR)
+    void gpiReading(EMA_EVENT *event);
+#endif
+
 private:
     Ui::MainWindow *ui;
 
@@ -131,6 +162,29 @@ private:
 #if defined(_EMALIB)
     EMA_HANDLE m_emaHandle;
 #endif
+    //----------
+#if defined(DEMOTOOLBOX)
+    int m_increment;
+#endif
+#if defined(_SENDTOSERVER)
+    //QUdpSocket *udpClient;
+    QHostAddress m_hostAddress;
+    quint16 m_port;
+    QString m_deviceSN;
+    InoutController m_inout;
+    //ConfigSettings m_config;
+    //Runtime run;
+    UdpServerThread *m_udpServerThread;
+    QTimer *m_timer;
+    UtilsHelper *utils;
+#endif
+
+#if defined(_ABDOOR)
+    unsigned char m_gpi1value;
+#endif
+    //----------
+
+
 	CMI_IMAGE_INFO *m_imageInfo;
 	bool m_isStart;
 	bool m_isEnroll;

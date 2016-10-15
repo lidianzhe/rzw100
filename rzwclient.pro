@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql
+QT       += core gui sql network
 
 VERSION_MINOR = 3.0
 
@@ -27,7 +27,15 @@ SOURCES += mainwindow.cpp \
     eventthread.cpp \
     dmeventthread.cpp \
     dbrecord.cpp \
-    dialogoverwrite.cpp
+    dialogoverwrite.cpp \
+    azsocketinfo.cpp \
+    azirisinfo.cpp \
+    configsettings.cpp \
+    inoutinfo.cpp \
+    inoutcontroller.cpp \
+    udpserverthread.cpp \
+    utilshelper.cpp \
+    runtime.cpp
 
 HEADERS  += mainwindow.h \
     cdatabase.h \
@@ -35,7 +43,15 @@ HEADERS  += mainwindow.h \
     eventthread.h \
     dmeventthread.h \
     dbrecord.h \
-    dialogoverwrite.h
+    dialogoverwrite.h \
+    azsocketinfo.h \
+    azirisinfo.h \
+    configsettings.h \
+    inoutinfo.h \
+    inoutcontroller.h \
+    udpserverthread.h \
+    utilshelper.h \
+    runtime.h
 
 FORMS    += mainwindow.ui \
     dialogname.ui \

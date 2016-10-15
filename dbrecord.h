@@ -16,6 +16,8 @@ public:
     const QString &leftIrisPath() {return m_leftIrisPath;}
     const QString &rightIrisPath() {return m_rightIrisPath;}
     const QString &faceImagePath() {return m_faceImagePath;}
+    //lhj add
+    const int if_UserNo() {return m_if_UserNo;}
 
 	void setId(int id) {m_id = id;}
 	void setName(QString &name) {m_name = name;}
@@ -25,6 +27,8 @@ public:
     void setRightIrisPath(QString &rightIrisPath) {m_rightIrisPath = rightIrisPath;}
     void setFaceImagePath(QString &faceImagePath) {m_faceImagePath = faceImagePath;}
 
+    void setIf_UserNo(int if_UserNo){m_if_UserNo=if_UserNo;}
+
 private:
     int m_id;
 	QString m_name;
@@ -33,6 +37,8 @@ private:
     QString m_leftIrisPath;
     QString m_rightIrisPath;
     QString m_faceImagePath;
+
+    int m_if_UserNo;
 };
 
 #endif // DBRECORD_H
