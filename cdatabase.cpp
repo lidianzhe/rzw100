@@ -158,7 +158,7 @@ bool CDataBase::update(DBRecord &record) {
                           "LeftIrisPath=:LEFT_IRIS_PATH, "
                           "RightIrisPath=:RIGHT_IRIS_PATH, "
                           "FaceImagePath=:FACE_IMAGE_PATH, "
-                          "if_UserNo=:IF_USERNO"
+                          "if_UserNo=:IF_USERNO "
                           "WHERE Id=:ID"));
 
 
@@ -169,7 +169,7 @@ bool CDataBase::update(DBRecord &record) {
     query.bindValue(":RIGHT_IRIS_PATH", QVariant(record.rightIrisPath()));
     query.bindValue(":FACE_IMAGE_PATH", QVariant(record.faceImagePath()));
     query.bindValue(":IF_USERNO", QVariant(record.if_UserNo()));
-
+    //qDebug(record.if_UserNo());
     query.bindValue(":ID", QVariant(record.id()));
 
     if (query.exec()) {
