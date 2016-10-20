@@ -1172,7 +1172,7 @@ bool MainWindow::canEnroll(CMI_IMAGE_INFO *imageInfo) {
 #else
         QSound::play("./notRecognized.wav");
 #endif
-        ui->statusBar->showMessage(QString("Error! Can not generate match template in \"canEnroll()\"%1").arg(ret));
+        ui->statusBar->showMessage(QString("0Error! Can not generate match template in \"canEnroll()\"%1").arg(ret));
         delete [] matchTemplate.left.templateData;
         delete [] matchTemplate.right.templateData;
         return false;
@@ -1232,17 +1232,19 @@ bool MainWindow::canEnroll(CMI_IMAGE_INFO *imageInfo) {
                 minId = i;
             }
         }
+        /*
         else if(lret != CMI_SUCCESS && rret != CMI_SUCCESS) { // Shouldn't be happend.
 #if defined(__linux__)
             system(QString("aplay %1/notRecognized.wav").arg(m_curPath).toStdString().c_str());
 #else
             QSound::play("./notRecognized.wav");
 #endif
-            ui->statusBar->showMessage(QString("Error! Fail to compare templates in \"canEnroll()\"%1").arg(ret));
+            ui->statusBar->showMessage(QString("1Error! Fail to compare templates in \"canEnroll()\"%1 %2").arg(lret).arg(rret));
             delete [] matchTemplate.left.templateData;
             delete [] matchTemplate.right.templateData;
             return false;
         }
+        */
     }
     delete [] matchTemplate.left.templateData;
     delete [] matchTemplate.right.templateData;
@@ -1318,7 +1320,7 @@ bool MainWindow::canEnroll(CMI_IMAGE_INFO *imageInfo) {
 #else
                 QSound::play("./notRecognized.wav");
 #endif
-                ui->statusBar->showMessage(QString("Error! Fail to get enroltemplate %1").arg(ret));
+                ui->statusBar->showMessage(QString("2Error! Fail to get enroltemplate %1").arg(ret));
                 delete [] enrolTemplate.left.templateData;
                 delete [] enrolTemplate.right.templateData;
                 return false;
@@ -1415,7 +1417,7 @@ bool MainWindow::canEnroll(CMI_IMAGE_INFO *imageInfo) {
             ////////////////////////////////////////////////////////////////////////////////////////
 
             if (!m_database.update(*record)) {
-                ui->statusBar->showMessage("Error! fail to enroll templates!");
+                ui->statusBar->showMessage("3Error! fail to enroll templates!");
             }
             else { // success
 
@@ -1452,8 +1454,14 @@ void MainWindow::doEnroll(CMI_IMAGE_INFO *imageInfo) {
     displaySelectedImages(imageInfo, lfinalImage, rfinalImage, false);
 
     bool isEnrollableRet = canEnroll(imageInfo);
-    if(isEnrollableRet == false) return;
-
+    if(isEnrollableRet == false)
+    {
+        //lhj add
+        //todo: sound message
+        if(dzrun.enrollMode)
+            recog();
+        return;
+    }
     CMI_MIR_DUAL_EYE_TEMPLATE enrolltemplate;
     enrolltemplate.left.templateData = new unsigned char [CMI_MIR_ENROL_TEMPLATE_SIZE];
     enrolltemplate.left.templateSize = CMI_MIR_ENROL_TEMPLATE_SIZE;
@@ -1486,7 +1494,7 @@ void MainWindow::doEnroll(CMI_IMAGE_INFO *imageInfo) {
     #else
         if(dzrun.enrollMode){
             ok=true;
-            name="u"+QString::number(dzrun.enrollPerson->personId);
+            name=QString::number(dzrun.enrollPerson->personId);
         }else
         if (ok = dialogname.exec()) {
             name = dialogname.name();
@@ -1498,6 +1506,7 @@ void MainWindow::doEnroll(CMI_IMAGE_INFO *imageInfo) {
         DBRecord record;
         QByteArray qba;
         record.setId(m_database.recordListSize());
+        record.setIf_UserNo(record.id());
         record.setName(name);
         qba = QByteArray((const char *)enrolltemplate.left.templateData, CMI_MIR_ENROL_TEMPLATE_SIZE);
         record.setLeftIrisTemplate(qba);
@@ -1852,14 +1861,16 @@ void MainWindow::doRecog(CMI_IMAGE_INFO *imageInfo) {
 #if defined(_ABDOOR)
         if(m_gpi1value==EMA_EVENT_VALUE_GPIO_LOW){
             qDebug()<<"please close A door ,first.";
-            //system(QString("aplay %1/closedoor.wav").arg(m_curPath).toStdString().c_str());
+            system(QString("aplay %1/closedoor.wav").arg(m_curPath).toStdString().c_str());
         }else{
             int ret = ema_writeEvent(m_emaHandle, &emaEvent);
             writeWeigand(record->if_UserNo());
+            system(QString("aplay %1/recognized.wav").arg(m_curPath).toStdString().c_str());
         }
 #else
         int ret = ema_writeEvent(m_emaHandle, &emaEvent);
         writeWeigand(record->if_UserNo());
+                    system(QString("aplay %1/recognized.wav").arg(m_curPath).toStdString().c_str());
 #endif
 //
 #endif
