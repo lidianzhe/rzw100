@@ -13,4 +13,5 @@ DBRecord::DBRecord(DBRecord &record)
     m_leftIrisPath = record.leftIrisPath();
     m_rightIrisPath = record.rightIrisPath();
     m_faceImagePath = record.faceImagePath();
+    m_if_UserNo = record.if_UserNo();
 }

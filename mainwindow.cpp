@@ -662,6 +662,9 @@ void MainWindow::open() {
         break;
 
     case EMA_SUCCESS:
+        //lhj
+        settingWeigand(26);
+
         break;
     }
 #endif
@@ -1864,6 +1867,7 @@ void MainWindow::doRecog(CMI_IMAGE_INFO *imageInfo) {
             system(QString("aplay %1/closedoor.wav").arg(m_curPath).toStdString().c_str());
         }else{
             int ret = ema_writeEvent(m_emaHandle, &emaEvent);
+            qDebug()<<"userid="<<record->if_UserNo();
             writeWeigand(record->if_UserNo());
             system(QString("aplay %1/recognized.wav").arg(m_curPath).toStdString().c_str());
         }

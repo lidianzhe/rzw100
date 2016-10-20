@@ -56,7 +56,7 @@ int CDataBase::open() {
         if (!query.exec()) return false;
 
         query.setForwardOnly(true);
-        if (!query.exec("SELECT * FROM EnrollTable")) return false;
+        if (!query.exec("SELECT Id, Name, LeftIrisTemplate, RightIrisTemplate, LeftIrisPath, RightIrisPath, FaceImagePath,if_UserNo FROM EnrollTable")) return false;
 
 		if (m_recordList.size() != 0) {
 			for (int i = 0; i < m_recordList.size(); i++) {

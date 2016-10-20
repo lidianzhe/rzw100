@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'dialogoverwrite.ui'
 **
-** Created: Thu Oct 20 11:18:03 2016
+** Created: Thu Oct 20 11:44:01 2016
 **      by: Qt User Interface Compiler version 4.8.1
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
